@@ -3,41 +3,26 @@ package com.backspark.socks.dto;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+/**
+ * Data Transfer Object (DTO) для работы с информацией о носках.
+ */
+@Data // Генерирует геттеры, сеттеры, equals, hashCode, toString
+@NoArgsConstructor // Генерирует конструктор без аргументов
+@AllArgsConstructor // Генерирует конструктор с аргументами для всех полей
 public class SockDto {
 
-    @NotBlank
+    @NotBlank(message = "Color cannot be blank")
     private String color;
 
-    @NotNull
-    @Min(0)
+    @NotNull(message = "Cotton part cannot be null")
+    @Min(value = 0, message = "Cotton part must be at least 0")
     private Integer cottonPart;
 
-    @NotNull
-    @Min(1)
+    @NotNull(message = "Quantity cannot be null")
+    @Min(value = 1, message = "Quantity must be at least 1")
     private Integer quantity;
-
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
-    }
-
-    public Integer getCottonPart() {
-        return cottonPart;
-    }
-
-    public void setCottonPart(Integer cottonPart) {
-        this.cottonPart = cottonPart;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
 }
