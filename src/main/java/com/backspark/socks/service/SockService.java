@@ -9,6 +9,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SockService {
@@ -31,15 +33,8 @@ public class SockService {
     @Transactional
     public void registerIncome(SockDto sockDto) {
         logger.info("Registering income: {}", sockDto);
-        Sock sock = sockRepository.findByColorAndCottonPart(sockDto.getColor(), sockDto.getCottonPart())
-                .stream()
-                .findFirst()
-                .orElse(new Sock());
-
-        sock.setColor(sockDto.getColor());
-        sock.setCottonPart(sockDto.getCottonPart());
-        sock.setQuantity(sock.getQuantity() == null ? sockDto.getQuantity() : sock.getQuantity() + sockDto.getQuantity());
-
+        Sock sock = findOrCreateSock(sockDto.getColor(), sockDto.getCottonPart());
+        sock.setQuantity(sock.getQuantity() + sockDto.getQuantity());
         sockRepository.save(sock);
     }
 
@@ -59,13 +54,15 @@ public class SockService {
         sockRepository.save(sock);
     }
 
-    public List<Sock> getSocks(String color, Integer cottonPartMin, Integer cottonPartMax) {
-        logger.info("Fetching socks with filters - color: {}, cottonPartMin: {}, cottonPartMax: {}", color, cottonPartMin, cottonPartMax);
-        return sockRepository.findAll().stream()
-                .filter(sock -> (color == null || sock.getColor().equalsIgnoreCase(color)) &&
-                        (cottonPartMin == null || sock.getCottonPart() >= cottonPartMin) &&
-                        (cottonPartMax == null || sock.getCottonPart() <= cottonPartMax))
-                .toList();
+    public List<Sock> getSocks(String color, Integer cottonPartMin, Integer cottonPartMax, Pageable pageable) {
+        if (color == null && cottonPartMin == null && cottonPartMax == null) {
+            return sockRepository.findAll();
+        }
+        return sockRepository.findByColorAndCottonPartBetween(
+                color,
+                cottonPartMin != null ? cottonPartMin : 0,
+                cottonPartMax != null ? cottonPartMax : 100
+        );
     }
 
     @Transactional
@@ -73,27 +70,35 @@ public class SockService {
         logger.info("Uploading batch from file: {}", file.getOriginalFilename());
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
-            List<Sock> socks = new ArrayList<>();
 
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // Skip header row
+                if (row.getRowNum() == 0) continue;
 
                 String color = row.getCell(0).getStringCellValue();
                 int cottonPart = (int) row.getCell(1).getNumericCellValue();
                 int quantity = (int) row.getCell(2).getNumericCellValue();
 
-                Sock sock = new Sock();
-                sock.setColor(color);
-                sock.setCottonPart(cottonPart);
-                sock.setQuantity(quantity);
-
-                socks.add(sock);
+                Sock sock = findOrCreateSock(color, cottonPart);
+                sock.setQuantity(sock.getQuantity() + quantity);
+                sockRepository.save(sock);
             }
-
-            sockRepository.saveAll(socks);
         } catch (IOException e) {
             logger.error("Error processing file: {}", file.getOriginalFilename(), e);
             throw new FileProcessingException("Failed to process the Excel file", e);
         }
     }
+
+    private Sock findOrCreateSock(String color, Integer cottonPart) {
+        return sockRepository.findByColorAndCottonPart(color, cottonPart)
+                .stream()
+                .findFirst()
+                .orElseGet(() -> {
+                    Sock newSock = new Sock();
+                    newSock.setColor(color);
+                    newSock.setCottonPart(cottonPart);
+                    newSock.setQuantity(0);
+                    return newSock;
+                });
+    }
+
 }
