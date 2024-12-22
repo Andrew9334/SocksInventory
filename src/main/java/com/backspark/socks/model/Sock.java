@@ -47,46 +47,4 @@ public class Sock {
     @Column(nullable = false)
     @Min(value = 0, message = "Quantity cannot be negative")
     private Integer quantity;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
-    }
-
-    public Integer getCottonPart() {
-        return cottonPart;
-    }
-
-    public void setCottonPart(Integer cottonPart) {
-        this.cottonPart = cottonPart;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
-    @Override
-    public String toString() {
-        return "Sock{" +
-                "id=" + id +
-                ", color='" + color + '\'' +
-                ", cottonPart=" + cottonPart +
-                ", quantity=" + quantity +
-                '}';
-    }
 }

@@ -27,7 +27,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleFileProcessingException(FileProcessingException ex) {
         logger.error("File processing error: {}", ex.getMessage(), ex);
         ApiError apiError = new ApiError(ex.getMessage(), "Ensure the uploaded file is valid and meets the requirements.");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiError);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
